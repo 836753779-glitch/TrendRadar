@@ -14,12 +14,12 @@ def image_to_video(
     duration: int = 5,
     watermark: bool = False,
     return_last_frame: bool = True,
-    model: str = "doubao-seedance-1-5-pro-251215"
+    model: str = "doubao-seedance-1-0-pro-250528"
 ) -> str:
     """
     基于参考图像生成视频，支持首帧或首尾帧模式。
 
-    支持多种AI视频生成工具，包括小云雀（即梦）和 Lab TV SEEDANCE 2.0。
+    支持多种AI视频生成工具，包括火山方舟 Seedance、小云雀（即梦）和 LIBTV SEEDANCE 2.0。
     适用于将静态素材转化为动态视频，或实现场景的平滑过渡。
     使用首尾帧模式可以精确控制场景的起始和结束状态，实现更精确的镜头控制。
 
@@ -33,28 +33,29 @@ def image_to_video(
         watermark: 是否添加水印，默认false
         return_last_frame: 是否返回最后一帧，默认true（用于后续场景拼接）
         model: 使用的AI视频生成模型，可选值：
-            - "doubao-seedance-1-5-pro-251215": SEEDANCE 1.5 Pro（当前默认，已验证可用）
-            - "doubao-seedance-2-0": SEEDANCE 2.0（Lab TV 内置，建议使用，需环境支持）
-            - "jimeng": 小云雀（即梦），需环境支持
+            - "doubao-seedance-1-0-pro-250528": 火山方舟 Seedance 1.0 Pro（当前推荐，需要配置火山方舟API密钥）
+            - "doubao-seedance-1-5-pro-251215": SEEDANCE 1.5 Pro（备选方案）
+            - "doubao-seedance-2-0": SEEDANCE 2.0（LIBTV 内置，需要配置LIBTV API密钥）
+            - "jimeng": 小云雀（即梦，需要配置LIBTV API密钥）
 
     Returns:
         生成的视频URL和最后一帧URL，如果生成失败则返回错误信息
 
     Example:
-        # 使用 SEEDANCE 1.5 Pro（当前可用）
+        # 使用火山方舟 Seedance 1.0 Pro（当前推荐）
         image_to_video(
             first_frame_url="https://example.com/scene1.jpg",
             prompt="缓慢平移镜头，展示森林的宁静氛围"
         )
 
-        # 使用 SEEDANCE 2.0（Lab TV，推荐）
+        # 使用 SEEDANCE 2.0（LIBTV，需配置密钥）
         image_to_video(
             first_frame_url="https://example.com/scene1.jpg",
             prompt="缓慢平移镜头，展示森林的宁静氛围",
             model="doubao-seedance-2-0"
         )
 
-        # 使用小云雀（即梦）
+        # 使用小云雀（即梦，需配置密钥）
         image_to_video(
             first_frame_url="https://example.com/scene1.jpg",
             prompt="缓慢平移镜头，展示森林的宁静氛围",
@@ -68,11 +69,16 @@ def image_to_video(
 
         # 模型选择逻辑
         actual_model = model
-        supported_models = ["doubao-seedance-1-5-pro-251215", "doubao-seedance-2-0", "jimeng"]
+        supported_models = [
+            "doubao-seedance-1-0-pro-250528",  # 火山方舟 Seedance 1.0 Pro（推荐）
+            "doubao-seedance-1-5-pro-251215",  # SEEDANCE 1.5 Pro（备选）
+            "doubao-seedance-2-0",            # SEEDANCE 2.0（LIBTV）
+            "jimeng"                           # 小云雀（即梦）
+        ]
 
         if model not in supported_models:
-            actual_model = "doubao-seedance-1-5-pro-251215"
-            print(f"⚠️ 模型 '{model}' 不在支持列表中，已自动切换到 SEEDANCE 1.5 Pro")
+            actual_model = "doubao-seedance-1-0-pro-250528"
+            print(f"⚠️ 模型 '{model}' 不在支持列表中，已自动切换到火山方舟 Seedance 1.0 Pro")
 
         content_items = [
             ImageURLContent(
@@ -107,8 +113,9 @@ def image_to_video(
         if video_url:
             # 映射模型到工具名称
             model_to_tool = {
-                "doubao-seedance-1-5-pro-251215": "SEEDANCE 1.5 Pro (Lab TV)",
-                "doubao-seedance-2-0": "SEEDANCE 2.0 (Lab TV - 推荐)",
+                "doubao-seedance-1-0-pro-250528": "火山方舟 Seedance 1.0 Pro (推荐)",
+                "doubao-seedance-1-5-pro-251215": "SEEDANCE 1.5 Pro (备选)",
+                "doubao-seedance-2-0": "SEEDANCE 2.0 (LIBTV)",
                 "jimeng": "小云雀（即梦）"
             }
             tool_name = model_to_tool.get(actual_model, actual_model)
@@ -124,4 +131,48 @@ def image_to_video(
             return f"❌ 图生视频失败，状态: {response.get('status', 'unknown')}"
 
     except Exception as e:
+        # 如果当前模型调用失败，尝试降级到备选模型
+        if model in ["doubao-seedance-2-0", "jimeng"]:
+            try:
+                print(f"⚠️ 模型 '{model}' 调用失败，尝试降级到 SEEDANCE 1.5 Pro...")
+                client = VideoGenerationClient(ctx=ctx)
+
+                content_items = [
+                    ImageURLContent(
+                        image_url=ImageURL(url=first_frame_url),
+                        role="first_frame"
+                    )
+                ]
+
+                if prompt:
+                    content_items.append(TextContent(text=prompt))
+
+                if last_frame_url:
+                    content_items.append(
+                        ImageURLContent(
+                            image_url=ImageURL(url=last_frame_url),
+                            role="last_frame"
+                        )
+                    )
+
+                video_url, response, last_frame = client.video_generation(
+                    content_items=content_items,
+                    model="doubao-seedance-1-5-pro-251215",  # 降级到已验证可用的模型
+                    resolution=resolution,
+                    ratio=ratio,
+                    duration=duration,
+                    watermark=watermark,
+                    return_last_frame=return_last_frame,
+                    generate_audio=True,
+                    max_wait_time=900
+                )
+
+                if video_url:
+                    result = f"✅ 图生视频成功！（已自动降级）\n📹 使用工具: SEEDANCE 1.5 Pro (备选)\n🔗 视频URL: {video_url}\n⏱️ 视频时长: {duration}秒\n📐 分辨率: {resolution}"
+                    if return_last_frame and last_frame:
+                        result += f"\n🖼️ 最后一帧URL: {last_frame}（可用于后续场景拼接）"
+                    return result
+            except Exception as e2:
+                return f"❌ 图生视频失败（尝试降级后仍失败）: {str(e)}\n降级错误: {str(e2)}"
+
         return f"图生视频过程中出现错误: {str(e)}"
