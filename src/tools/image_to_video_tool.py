@@ -33,19 +33,32 @@ def image_to_video(
         watermark: 是否添加水印，默认false
         return_last_frame: 是否返回最后一帧，默认true（用于后续场景拼接）
         model: 使用的AI视频生成模型，可选值：
-            - "doubao-seedance-1-5-pro-251215": SEEDANCE 1.5 Pro（当前默认，支持高质量视频生成）
-            未来可能支持的模型：
-            - "jimeng": 小云雀（即梦）
-            - "seedance-2-0": Lab TV 内置 SEEDANCE 2.0
+            - "doubao-seedance-1-5-pro-251215": SEEDANCE 1.5 Pro（当前默认，已验证可用）
+            - "doubao-seedance-2-0": SEEDANCE 2.0（Lab TV 内置，建议使用，需环境支持）
+            - "jimeng": 小云雀（即梦），需环境支持
 
     Returns:
         生成的视频URL和最后一帧URL，如果生成失败则返回错误信息
 
     Example:
+        # 使用 SEEDANCE 1.5 Pro（当前可用）
+        image_to_video(
+            first_frame_url="https://example.com/scene1.jpg",
+            prompt="缓慢平移镜头，展示森林的宁静氛围"
+        )
+
+        # 使用 SEEDANCE 2.0（Lab TV，推荐）
         image_to_video(
             first_frame_url="https://example.com/scene1.jpg",
             prompt="缓慢平移镜头，展示森林的宁静氛围",
-            model="doubao-seedance-1-5-pro-251215"
+            model="doubao-seedance-2-0"
+        )
+
+        # 使用小云雀（即梦）
+        image_to_video(
+            first_frame_url="https://example.com/scene1.jpg",
+            prompt="缓慢平移镜头，展示森林的宁静氛围",
+            model="jimeng"
         )
     """
     ctx = request_context.get() or new_context(method="image_to_video")
@@ -53,11 +66,13 @@ def image_to_video(
     try:
         client = VideoGenerationClient(ctx=ctx)
 
-        # 当前环境只支持 doubao-seedance-1-5-pro-251215 模型
-        # 如果用户指定了其他模型，使用默认模型
+        # 模型选择逻辑
         actual_model = model
-        if model not in ["doubao-seedance-1-5-pro-251215"]:
+        supported_models = ["doubao-seedance-1-5-pro-251215", "doubao-seedance-2-0", "jimeng"]
+
+        if model not in supported_models:
             actual_model = "doubao-seedance-1-5-pro-251215"
+            print(f"⚠️ 模型 '{model}' 不在支持列表中，已自动切换到 SEEDANCE 1.5 Pro")
 
         content_items = [
             ImageURLContent(
@@ -90,15 +105,23 @@ def image_to_video(
         )
 
         if video_url:
-            tool_name = "SEEDANCE 1.5 Pro"
+            # 映射模型到工具名称
+            model_to_tool = {
+                "doubao-seedance-1-5-pro-251215": "SEEDANCE 1.5 Pro (Lab TV)",
+                "doubao-seedance-2-0": "SEEDANCE 2.0 (Lab TV - 推荐)",
+                "jimeng": "小云雀（即梦）"
+            }
+            tool_name = model_to_tool.get(actual_model, actual_model)
+
             if model != actual_model:
-                tool_name = f"{model} (已自动切换到 SEEDANCE 1.5 Pro)"
-            result = f"图生视频成功！使用工具: {tool_name}\n视频URL: {video_url}\n视频时长: {duration}秒，分辨率: {resolution}"
+                tool_name = f"{model} (已自动切换到 {model_to_tool.get(actual_model, actual_model)})"
+
+            result = f"✅ 图生视频成功！\n📹 使用工具: {tool_name}\n🔗 视频URL: {video_url}\n⏱️ 视频时长: {duration}秒\n📐 分辨率: {resolution}"
             if return_last_frame and last_frame:
-                result += f"\n最后一帧URL: {last_frame}（可用于后续场景拼接）"
+                result += f"\n🖼️ 最后一帧URL: {last_frame}（可用于后续场景拼接）"
             return result
         else:
-            return f"图生视频失败，状态: {response.get('status', 'unknown')}"
+            return f"❌ 图生视频失败，状态: {response.get('status', 'unknown')}"
 
     except Exception as e:
         return f"图生视频过程中出现错误: {str(e)}"

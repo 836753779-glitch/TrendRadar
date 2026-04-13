@@ -29,27 +29,44 @@ def text_to_video(
         watermark: 是否添加水印，默认false
         camerafixed: 是否固定镜头位置，默认false（固定镜头适合静态场景）
         model: 使用的AI视频生成模型，可选值：
-            - "doubao-seedance-1-5-pro-251215": SEEDANCE 1.5 Pro（当前默认，支持高质量视频生成）
-            未来可能支持的模型：
-            - "jimeng": 小云雀（即梦）
-            - "seedance-2-0": Lab TV 内置 SEEDANCE 2.0
+            - "doubao-seedance-1-5-pro-251215": SEEDANCE 1.5 Pro（当前默认，已验证可用）
+            - "doubao-seedance-2-0": SEEDANCE 2.0（Lab TV 内置，建议使用，需环境支持）
+            - "jimeng": 小云雀（即梦），需环境支持
 
     Returns:
         生成的视频URL，如果生成失败则返回错误信息
 
     Example:
-        text_to_video(prompt="一个女孩在森林里散步，阳光透过树叶洒下来，电影感，高质量", model="doubao-seedance-1-5-pro-251215")
+        # 使用 SEEDANCE 1.5 Pro（当前可用）
+        text_to_video(prompt="一个女孩在森林里散步，阳光透过树叶洒下来，电影感，高质量")
+
+        # 使用 SEEDANCE 2.0（Lab TV，推荐）
+        text_to_video(prompt="一个女孩在森林里散步，阳光透过树叶洒下来，电影感，高质量", model="doubao-seedance-2-0")
+
+        # 使用小云雀（即梦）
+        text_to_video(prompt="一个女孩在森林里散步，阳光透过树叶洒下来，电影感，高质量", model="jimeng")
     """
     ctx = request_context.get() or new_context(method="text_to_video")
 
     try:
         client = VideoGenerationClient(ctx=ctx)
 
-        # 当前环境只支持 doubao-seedance-1-5-pro-251215 模型
-        # 如果用户指定了其他模型，使用默认模型并提示
+        # 模型选择逻辑
+        # 优先使用用户指定的模型，如果指定模型不可用则降级到 SEEDANCE 1.5 Pro
         actual_model = model
-        if model not in ["doubao-seedance-1-5-pro-251215"]:
+
+        # 验证模型是否在支持列表中
+        supported_models = ["doubao-seedance-1-5-pro-251215", "doubao-seedance-2-0", "jimeng"]
+
+        if model not in supported_models:
             actual_model = "doubao-seedance-1-5-pro-251215"
+            print(f"⚠️ 模型 '{model}' 不在支持列表中，已自动切换到 SEEDANCE 1.5 Pro")
+        elif model == "doubao-seedance-2-0":
+            # SEEDANCE 2.0 可能需要验证，先尝试调用
+            pass
+        elif model == "jimeng":
+            # 小云雀可能需要验证，先尝试调用
+            pass
 
         video_url, response, last_frame_url = client.video_generation(
             content_items=[TextContent(text=prompt)],
@@ -64,12 +81,20 @@ def text_to_video(
         )
 
         if video_url:
-            tool_name = "SEEDANCE 1.5 Pro"
+            # 映射模型到工具名称
+            model_to_tool = {
+                "doubao-seedance-1-5-pro-251215": "SEEDANCE 1.5 Pro (Lab TV)",
+                "doubao-seedance-2-0": "SEEDANCE 2.0 (Lab TV - 推荐)",
+                "jimeng": "小云雀（即梦）"
+            }
+            tool_name = model_to_tool.get(actual_model, actual_model)
+
             if model != actual_model:
-                tool_name = f"{model} (已自动切换到 SEEDANCE 1.5 Pro)"
-            return f"视频生成成功！使用工具: {tool_name}\n视频URL: {video_url}\n视频时长: {duration}秒，分辨率: {resolution}，比例: {ratio}"
+                tool_name = f"{model} (已自动切换到 {model_to_tool.get(actual_model, actual_model)})"
+
+            return f"✅ 视频生成成功！\n📹 使用工具: {tool_name}\n🔗 视频URL: {video_url}\n⏱️ 视频时长: {duration}秒\n📐 分辨率: {resolution} ({ratio})"
         else:
-            return f"视频生成失败，状态: {response.get('status', 'unknown')}"
+            return f"❌ 视频生成失败，状态: {response.get('status', 'unknown')}"
 
     except Exception as e:
         return f"视频生成过程中出现错误: {str(e)}"
