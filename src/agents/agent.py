@@ -12,6 +12,7 @@ from storage.memory.memory_saver import get_memory_saver
 # 导入工具
 from tools.video_generation_tool import text_to_video
 from tools.image_to_video_tool import image_to_video
+from tools.video_with_character_tool import text_to_video_with_character
 from tools.video_edit_tool import concat_videos, trim_video
 from tools.subtitle_tool import add_subtitles
 
@@ -57,6 +58,7 @@ def build_agent(ctx=None):
         system_prompt=cfg.get("sp"),
         tools=[
             text_to_video,
+            text_to_video_with_character,
             image_to_video,
             concat_videos,
             trim_video,
