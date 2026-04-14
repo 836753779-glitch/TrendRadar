@@ -56,6 +56,10 @@ from tools.video_prompt_smart import (
     optimize_video_prompt_with_llm,
     generate_video_prompt_smart
 )
+from tools.video_advanced_generation import (
+    generate_video_with_both_frames,
+    generate_video_fixed_camera
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -145,6 +149,10 @@ def build_agent(ctx=None):
             # LLM 智能视频提示词优化（使用大模型解决物理错误、口型同步、画面诡异等问题）
             optimize_video_prompt_with_llm,
             generate_video_prompt_smart,
+
+            # 高级视频生成（使用首帧+尾帧、固定镜头等专业技术）
+            generate_video_with_both_frames,
+            generate_video_fixed_camera,
 
             # 视频上传到对象存储
             upload_video_to_storage,
