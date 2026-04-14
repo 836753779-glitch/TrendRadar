@@ -11,6 +11,7 @@
   "tools": [
     "generate_complete_video",
     "batch_generate_videos",
+    "generate_long_video",
     "text_to_speech",
     "batch_text_to_speech",
     "compile_video_audio",

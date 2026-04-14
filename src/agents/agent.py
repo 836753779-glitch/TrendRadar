@@ -36,6 +36,7 @@ from tools.complete_video_tool import (
     generate_complete_video,
     batch_generate_videos
 )
+from tools.long_video_tool import generate_long_video
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -81,6 +82,7 @@ def build_agent(ctx=None):
             # 完整视频生成（推荐）
             generate_complete_video,
             batch_generate_videos,
+            generate_long_video,
 
             # 语音合成
             text_to_speech,
