@@ -39,9 +39,15 @@
     "create_narration_prompt",
     "upload_video_to_storage",
     "upload_and_notify_feishu",
-    "optimize_video_prompt_professional",
-    "generate_scene_based_prompt",
-    "fix_physical_physics_issue",
-    "analyze_script_for_actions"
+    "optimize_video_prompt_with_llm",
+    "generate_video_prompt_smart",
+    "generate_video_with_both_frames",
+    "generate_video_fixed_camera",
+    "generate_test_video",
+    "confirm_and_generate_long_video",
+    "two_stage_video_production",
+    "create_simple_effective_prompt",
+    "create_physics_safe_prompt",
+    "optimize_prompt_based_on_feedback"
   ]
 }

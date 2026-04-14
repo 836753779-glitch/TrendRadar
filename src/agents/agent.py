@@ -65,6 +65,11 @@ from tools.two_stage_production import (
     confirm_and_generate_long_video,
     two_stage_video_production
 )
+from tools.prompt_simplified import (
+    create_simple_effective_prompt,
+    create_physics_safe_prompt,
+    optimize_prompt_based_on_feedback
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -166,7 +171,12 @@ def build_agent(ctx=None):
 
             # 视频上传到对象存储
             upload_video_to_storage,
-            upload_and_notify_feishu
+            upload_and_notify_feishu,
+
+            # 简化提示词工具（基于反馈优化，解决穿桌、人物质量问题）
+            create_simple_effective_prompt,
+            create_physics_safe_prompt,
+            optimize_prompt_based_on_feedback
         ],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,
