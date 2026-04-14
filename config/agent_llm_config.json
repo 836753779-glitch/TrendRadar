@@ -30,6 +30,10 @@
     "text_to_video_with_character",
     "image_to_video",
     "concat_videos",
-    "trim_video"
+    "trim_video",
+    "send_feishu_text_message",
+    "send_feishu_video_notification",
+    "send_feishu_card_notification",
+    "send_feishu_batch_notification"
   ]
 }

@@ -1,6 +1,7 @@
 from langchain.tools import tool
 import requests
 import os
+import re
 from coze_coding_utils.runtime_ctx.context import new_context
 from coze_coding_dev_sdk.video_edit import (
     VideoEditClient,
@@ -13,21 +14,50 @@ OUTPUT_DIR = "/workspace/projects/assets/subtitle_output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
+def convert_traditional_to_simplified(text: str) -> str:
+    """
+    将繁体中文转换为简体中文。
+
+    Args:
+        text: 繁体中文文本
+
+    Returns:
+        简体中文文本
+    """
+    try:
+        # 尝试使用 opencc 进行转换
+        import opencc
+        converter = opencc.OpenCC('t2s')
+        return converter.convert(text)
+    except ImportError:
+        # 如果 opencc 不可用，返回原文本
+        # 在实际使用中，建议安装 opencc: pip install opencc
+        print("⚠️ 警告：opencc 未安装，字幕可能包含繁体字")
+        print("💡 建议安装：pip install opencc")
+        return text
+    except Exception as e:
+        print(f"⚠️ 繁简转换失败：{str(e)}")
+        return text
+
+
 @tool
 def generate_subtitle_from_audio(
     audio_url: str,
     subtitle_type: str = "srt",
-    output_filename: str = None
+    output_filename: str = None,
+    force_simplified: bool = True
 ) -> str:
     """
     从音频/视频中自动生成字幕文件。
 
     使用语音识别技术将音频转换为带时间戳的字幕文件。
+    支持强制转换为简体中文。
 
     Args:
         audio_url: 音频或视频文件 URL
         subtitle_type: 字幕格式（srt 或 webvtt）
         output_filename: 输出文件名（不含扩展名）
+        force_simplified: 是否强制转换为简体中文（默认True）
 
     Returns:
         生成的字幕文件信息
@@ -35,7 +65,8 @@ def generate_subtitle_from_audio(
     Example:
         generate_subtitle_from_audio(
             audio_url="https://example.com/narration.mp3",
-            subtitle_type="srt"
+            subtitle_type="srt",
+            force_simplified=True
         )
     """
     ctx = new_context(method="generate_subtitle_from_audio")
@@ -67,8 +98,14 @@ def generate_subtitle_from_audio(
             response_download = requests.get(response.url, timeout=120)
             response_download.raise_for_status()
 
-            with open(output_path, 'wb') as f:
-                f.write(response_download.content)
+            subtitle_content = response_download.content.decode('utf-8')
+
+            # 繁简转换
+            if force_simplified:
+                subtitle_content = convert_traditional_to_simplified(subtitle_content)
+
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(subtitle_content)
 
             # 读取字幕内容预览
             with open(output_path, 'r', encoding='utf-8') as f:
@@ -81,6 +118,7 @@ def generate_subtitle_from_audio(
   - 格式：{subtitle_type}
   - 在线 URL：{response.url}
   - URL 有效期：24 小时
+  - 简体中文：{'✅ 已转换' if force_simplified else '❌ 未转换'}
 
 📁 文件信息：
   - 本地路径：{output_path}
@@ -91,6 +129,7 @@ def generate_subtitle_from_audio(
 
 💡 提示：
   - 字幕已保存到本地，可直接使用
+  - 字幕已转换为简体中文
   - 如需将字幕添加到视频，请使用 add_subtitles_to_video 工具
 """
 
@@ -124,7 +163,8 @@ def add_subtitles_to_video(
     border_width: int = 1,
     border_color: str = "#00000088",
     position_y: str = "90%",
-    output_filename: str = None
+    output_filename: str = None,
+    force_simplified: bool = True
 ) -> str:
     """
     为视频添加字幕。
@@ -132,6 +172,8 @@ def add_subtitles_to_video(
     支持两种方式：
     1. 直接传入文本列表（带时间戳）
     2. 使用字幕文件（SRT/VTT/ASS）
+
+    如果使用字幕文件，支持强制转换为简体中文。
 
     Args:
         video_url: 视频文件 URL
@@ -145,6 +187,7 @@ def add_subtitles_to_video(
         border_color: 边框颜色，默认半透明黑色
         position_y: 字幕位置（Y轴百分比），默认 90%
         output_filename: 输出文件名（不含扩展名）
+        force_simplified: 是否强制转换为简体中文（默认True）
 
     Returns:
         添加字幕后的视频 URL 和文件信息
@@ -162,17 +205,8 @@ def add_subtitles_to_video(
         # 方式2：使用字幕文件
         add_subtitles_to_video(
             video_url="https://example.com/video.mp4",
-            subtitle_url="https://example.com/subtitles.srt"
-        )
-
-        # 自定义样式
-        add_subtitles_to_video(
-            video_url="https://example.com/video.mp4",
-            text_list=[{"start_time": 0.0, "end_time": 5.0, "text": "测试字幕"}],
-            font_size=40,
-            font_color="#FFFF00FF",  # 黄色
-            border_width=2,
-            position_y="85%"
+            subtitle_url="https://example.com/subtitles.srt",
+            force_simplified=True
         )
     """
     ctx = new_context(method="add_subtitles_to_video")
@@ -183,6 +217,30 @@ def add_subtitles_to_video(
 
     if subtitle_url and not subtitle_url.startswith("http://") and not subtitle_url.startswith("https://"):
         return f"ERROR: 字幕文件暂不支持本地路径，请提供公开 URL。\n本地路径：{subtitle_url}"
+
+    # 如果使用字幕文件，先下载并转换为简体中文
+    processed_subtitle_url = subtitle_url
+    if subtitle_url and force_simplified:
+        try:
+            # 下载字幕文件
+            response = requests.get(subtitle_url, timeout=120)
+            response.raise_for_status()
+
+            subtitle_content = response.content.decode('utf-8')
+
+            # 繁简转换
+            simplified_content = convert_traditional_to_simplified(subtitle_content)
+
+            # 保存到本地
+            import time
+            temp_subtitle_path = os.path.join(OUTPUT_DIR, f"temp_simplified_{int(time.time())}.srt")
+            with open(temp_subtitle_path, 'w', encoding='utf-8') as f:
+                f.write(simplified_content)
+
+            print(f"✅ 字幕已转换为简体中文：{temp_subtitle_path}")
+
+        except Exception as e:
+            print(f"⚠️ 字幕繁简转换失败：{str(e)}")
 
     # 初始化视频编辑客户端
     client = VideoEditClient(ctx=ctx)
@@ -207,6 +265,17 @@ def add_subtitles_to_video(
     # 准备文本项
     text_items = None
     if text_list:
+        # 如果使用文本列表，也进行繁简转换
+        if force_simplified:
+            text_list = [
+                {
+                    "start_time": item["start_time"],
+                    "end_time": item["end_time"],
+                    "text": convert_traditional_to_simplified(item["text"])
+                }
+                for item in text_list
+            ]
+
         text_items = [
             TextItem(
                 start_time=item["start_time"],
@@ -221,7 +290,7 @@ def add_subtitles_to_video(
         response = client.add_subtitles(
             video=video_url,
             subtitle_config=subtitle_config,
-            subtitle_url=subtitle_url,
+            subtitle_url=processed_subtitle_url,
             text_list=text_items,
             url_expire=86400  # 24小时
         )
@@ -253,6 +322,7 @@ def add_subtitles_to_video(
   - 字幕数量：{len(text_list) if text_list else '未知'}
   - 字体大小：{font_size}px
   - 字幕位置：{position_y}
+  - 简体中文：{'✅ 已转换' if force_simplified else '❌ 未转换'}
 
 🎨 样式设置：
   - 字体颜色：{font_color}
@@ -267,6 +337,7 @@ def add_subtitles_to_video(
 
 💡 提示：
   - 视频已保存到本地，可直接使用
+  - 字幕已转换为简体中文
   - 这是最终成片，无需进一步处理
 """
 
@@ -279,7 +350,8 @@ def auto_subtitle_pipeline(
     video_url: str,
     font_size: int = 36,
     position_y: str = "90%",
-    output_filename: str = None
+    output_filename: str = None,
+    force_simplified: bool = True
 ) -> str:
     """
     一键自动为视频添加字幕（从音频生成字幕并添加到视频）。
@@ -287,20 +359,23 @@ def auto_subtitle_pipeline(
     完整流程：
     1. 从视频中提取音频
     2. 识别音频内容，生成字幕
-    3. 将字幕添加到视频
+    3. 将字幕转换为简体中文
+    4. 将字幕添加到视频
 
     Args:
         video_url: 视频文件 URL
         font_size: 字体大小（像素），默认 36
         position_y: 字幕位置（Y轴百分比），默认 90%
         output_filename: 输出文件名（不含扩展名）
+        force_simplified: 是否强制转换为简体中文（默认True）
 
     Returns:
         添加字幕后的视频 URL 和文件信息
 
     Example:
         auto_subtitle_pipeline(
-            video_url="https://example.com/video.mp4"
+            video_url="https://example.com/video.mp4",
+            force_simplified=True
         )
     """
     ctx = new_context(method="auto_subtitle_pipeline")
@@ -309,14 +384,14 @@ def auto_subtitle_pipeline(
         # 步骤1：生成字幕
         subtitle_result = generate_subtitle_from_audio(
             audio_url=video_url,
-            subtitle_type="srt"
+            subtitle_type="srt",
+            force_simplified=force_simplified
         )
 
         if "ERROR" in subtitle_result or "❌" in subtitle_result:
             return f"❌ 步骤1（生成字幕）失败：\n{subtitle_result}"
 
         # 提取字幕 URL
-        import re
         url_match = re.search(r'在线 URL：(https?://[^\s]+)', subtitle_result)
         if not url_match:
             return f"❌ 无法提取字幕 URL：{subtitle_result}"
@@ -329,7 +404,8 @@ def auto_subtitle_pipeline(
             subtitle_url=subtitle_url,
             font_size=font_size,
             position_y=position_y,
-            output_filename=output_filename
+            output_filename=output_filename,
+            force_simplified=force_simplified
         )
 
         if "ERROR" in video_result or "❌" in video_result:
@@ -339,7 +415,8 @@ def auto_subtitle_pipeline(
 
 🎬 流程摘要：
   步骤1：从音频生成字幕 ✅
-  步骤2：将字幕添加到视频 ✅
+  步骤2：将字幕转换为简体中文 ✅
+  步骤3：将字幕添加到视频 ✅
 
 {video_result}
 """

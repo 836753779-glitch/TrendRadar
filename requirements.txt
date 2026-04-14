@@ -62,6 +62,7 @@ more-itertools==10.8.0
 multidict==6.7.1
 numpy==2.4.2
 openai==2.24.0
+opencc==1.2.0
 opencv-python==4.13.0.92
 openpyxl==3.1.5
 orjson==3.11.7

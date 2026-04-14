@@ -37,6 +37,12 @@ from tools.complete_video_tool import (
     batch_generate_videos
 )
 from tools.long_video_tool import generate_long_video
+from tools.feishu_notification_tool import (
+    send_feishu_text_message,
+    send_feishu_video_notification,
+    send_feishu_card_notification,
+    send_feishu_batch_notification
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -110,7 +116,13 @@ def build_agent(ctx=None):
             kling_cli_account_info,
             image_to_video,
             concat_videos,
-            trim_video
+            trim_video,
+
+            # 飞书消息推送
+            send_feishu_text_message,
+            send_feishu_video_notification,
+            send_feishu_card_notification,
+            send_feishu_batch_notification
         ],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,

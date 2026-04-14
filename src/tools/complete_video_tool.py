@@ -229,6 +229,27 @@ def generate_complete_video(
   - 无需任何后续处理
 """
 
+    # 自动推送到飞书
+    try:
+        from tools.feishu_notification_tool import send_feishu_video_notification
+
+        # 提取视频信息
+        import re
+        video_title = f"视频生成完成 - {output_filename if output_filename else '未命名'}"
+
+        # 推送飞书通知
+        feishu_result = send_feishu_video_notification(
+            title=video_title,
+            video_url=f"file://{final_video_path}",
+            description=f"{prompt[:100]}{'...' if len(prompt) > 100 else ''}",
+            video_duration=video_duration
+        )
+
+        final_report += f"\n\n📢 飞书通知：\n{feishu_result}"
+
+    except Exception as e:
+        final_report += f"\n\n⚠️ 飞书推送失败：{str(e)}"
+
     return final_report
 
 
