@@ -65,16 +65,28 @@ def generate_complete_video(
     try:
         # 优先使用 Kling CLI（对角色参考图片支持最好）
         from tools.kling_cli_tool import kling_cli_text_to_video
+        from tools.video_prompt_smart import optimize_video_prompt_with_llm
 
-        # 优化提示词：强调说话动作和自然手势
-        optimized_prompt = f"""{prompt}。
+        # 判断场景和动作
+        scene_context = "坐在传统中式茶桌前，面向镜头"
+        action_type = "speaking"
 
-重要动作要求：
-- 角色正在讲解/说话，嘴巴有自然的说话动作
-- 配合自然的手势动作，表达清晰
-- 面部表情生动，眼神专注
-- 整体姿态自然流畅
-- 严格按照提供的角色参考图片生成，确保人物外貌、发型、穿着完全一致，保持人物一致性。"""
+        if "站立" in prompt or "站" in prompt:
+            scene_context = "站立在传统中式茶室中，面向镜头"
+        if "演示" in prompt or "展示" in prompt:
+            action_type = "demonstrating"
+        elif "手持" in prompt or "拿" in prompt:
+            action_type = "holding"
+
+        # 使用 LLM 智能优化提示词（解决物理错误、口型同步、画面诡异等问题）
+        print("正在使用 LLM 智能优化视频生成提示词...")
+        optimized_prompt = optimize_video_prompt_with_llm(
+            scene_description=f"{scene_context}，{prompt}",
+            action_type=action_type,
+            character_name="香道文化传播者"
+        )
+
+        print(f"优化后的提示词：\n{optimized_prompt}")
 
         video_result = kling_cli_text_to_video(
             prompt=optimized_prompt,

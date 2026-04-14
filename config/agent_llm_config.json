@@ -39,6 +39,9 @@
     "create_narration_prompt",
     "upload_video_to_storage",
     "upload_and_notify_feishu",
+    "optimize_video_prompt_professional",
+    "generate_scene_based_prompt",
+    "fix_physical_physics_issue",
     "analyze_script_for_actions"
   ]
 }

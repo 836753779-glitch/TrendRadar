@@ -52,6 +52,10 @@ from tools.video_upload_tool import (
     upload_video_to_storage,
     upload_and_notify_feishu
 )
+from tools.video_prompt_smart import (
+    optimize_video_prompt_with_llm,
+    generate_video_prompt_smart
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -137,6 +141,10 @@ def build_agent(ctx=None):
             optimize_prompt_for_speaking,
             create_narration_prompt,
             analyze_script_for_actions,
+
+            # LLM 智能视频提示词优化（使用大模型解决物理错误、口型同步、画面诡异等问题）
+            optimize_video_prompt_with_llm,
+            generate_video_prompt_smart,
 
             # 视频上传到对象存储
             upload_video_to_storage,
