@@ -21,6 +21,7 @@ from tools.kling_cli_tool import (
     kling_cli_list_subjects,
     kling_cli_account_info
 )
+from tools.kling_element_tool import kling_cli_text_to_video_with_element
 from tools.video_edit_tool import concat_videos, trim_video
 
 # 导入语音合成和视频合成工具
@@ -98,6 +99,8 @@ def build_agent(ctx=None):
             text_to_video,
             text_to_video_with_character,
             kling_text_to_video,
+            # Kling O3 角色主体生成（人物一致性最佳方案）
+            kling_cli_text_to_video_with_element,
             kling_cli_text_to_video,
             kling_cli_image_to_video,
             kling_cli_create_subject,

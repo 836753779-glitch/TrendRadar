@@ -1,0 +1,11 @@
+{
+  "element_id": "308110838358255",
+  "name": "香道文化传播者",
+  "description": "温婉的东方女性，40-50岁，中式服装，低发髻，面带微笑",
+  "reference_images": [
+    "./assets/character_reference/character_multi_angle_1.png",
+    "./assets/character_reference/character_multi_angle_2.png",
+    "./assets/character_reference/character_multi_angle_3.png"
+  ],
+  "created_at": "2026-04-14"
+}
