@@ -63,30 +63,21 @@ def generate_complete_video(
     steps_result.append(f"{'='*60}")
 
     try:
-        # 动态导入视频生成工具
-        if video_model.startswith("kling"):
-            from tools.kling_cli_tool import kling_cli_text_to_video
-            video_result = kling_cli_text_to_video(
-                prompt=prompt,
-                character_image_url=character_image_url,
-                model=video_model,
-                mode=video_mode,
-                aspect_ratio=video_ratio,
-                duration=video_duration,
-                sound="off"  # 不生成原声音频
-            )
-        else:
-            from tools.video_with_character_tool import text_to_video_with_character
-            video_result = text_to_video_with_character(
-                prompt=prompt,
-                character_image_url=character_image_url,
-                resolution="1080p" if video_mode == "pro" else "720p",
-                ratio=video_ratio,
-                duration=video_duration,
-                watermark=False,
-                camerafixed=False,
-                model=video_model
-            )
+        # 优先使用 Kling CLI（对角色参考图片支持最好）
+        from tools.kling_cli_tool import kling_cli_text_to_video
+
+        # 优化提示词：简化并强调使用参考图片
+        optimized_prompt = f"{prompt}。严格按照提供的角色参考图片生成，确保人物外貌、发型、穿着完全一致，保持人物一致性。"
+
+        video_result = kling_cli_text_to_video(
+            prompt=optimized_prompt,
+            character_image_url=character_image_url,
+            model="kling-v3-omni",  # 强制使用 kling-v3-omni（对角色一致性支持最好）
+            mode=video_mode,
+            aspect_ratio=video_ratio,
+            duration=video_duration,
+            sound="off"  # 不生成原声音频
+        )
 
         steps_result.append(video_result)
 
