@@ -37,6 +37,8 @@
     "send_feishu_batch_notification",
     "optimize_prompt_for_speaking",
     "create_narration_prompt",
+    "upload_video_to_storage",
+    "upload_and_notify_feishu",
     "analyze_script_for_actions"
   ]
 }

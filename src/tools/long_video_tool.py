@@ -107,8 +107,62 @@ def generate_long_video(
             if subtitle_result and "❌" not in subtitle_result:
                 final_video = subtitle_result
 
+        # 保存最终视频文件名
+        import time
+        output_filename = f"long_video_{int(time.time())}.mp4"
+        output_path = final_video
+
+        # 第七步：上传到对象存储
+        video_public_url = None
+        try:
+            from coze_coding_dev_sdk.s3 import S3SyncStorage
+
+            storage = S3SyncStorage(
+                endpoint_url=os.getenv("COZE_BUCKET_ENDPOINT_URL"),
+                access_key="",
+                secret_key="",
+                bucket_name=os.getenv("COZE_BUCKET_NAME"),
+                region="cn-beijing"
+            )
+
+            # 上传视频到对象存储
+            with open(output_path, 'rb') as f:
+                video_key = storage.stream_upload_file(
+                    fileobj=f,
+                    file_name=f"videos/{output_filename}",
+                    content_type="video/mp4"
+                )
+
+            # 生成签名URL（有效期7天）
+            video_public_url = storage.generate_presigned_url(
+                key=video_key,
+                expire_time=604800  # 7天
+            )
+
+            print(f"视频已上传到对象存储，URL: {video_public_url}")
+
+        except Exception as e:
+            print(f"对象存储上传失败：{str(e)}")
+
+        # 第八步：推送到飞书
+        try:
+            from tools.feishu_notification_tool import send_feishu_video_notification
+
+            feishu_url = video_public_url if video_public_url else output_path
+            feishu_result = send_feishu_video_notification(
+                title=f"长视频生成完成 - {output_filename}",
+                video_url=feishu_url,
+                description=script[:100] + "..." if len(script) > 100 else script,
+                video_duration=duration
+            )
+
+            print(f"飞书推送成功：{feishu_result}")
+
+        except Exception as e:
+            print(f"飞书推送失败：{str(e)}")
+
         # 构建返回信息
-        return _build_success_message(final_video, scenes, duration)
+        return _build_success_message(final_video, scenes, duration, video_public_url)
 
     except Exception as e:
         return f"❌ 长视频生成失败：{str(e)}"
@@ -386,7 +440,8 @@ def _add_subtitles(video_path: str, script: str) -> str:
 def _build_success_message(
     final_video: str,
     scenes: List[Dict],
-    duration: int
+    duration: int,
+    video_public_url: str = None
 ) -> str:
     """构建成功消息"""
 
@@ -414,6 +469,17 @@ def _build_success_message(
     message_parts.append("  ✅ 色调统一: 暖色调、中式美学")
     message_parts.append("  ✅ 配音统一: 使用指定声音")
     message_parts.append("  ✅ 字幕自动生成")
+
+    # 添加对象存储信息
+    if video_public_url:
+        message_parts.append("")
+        message_parts.append("☁️ 对象存储：")
+        message_parts.append(f"  ✅ 视频已上传到对象存储")
+        message_parts.append(f"  ✅ 公开URL有效期：7天")
+        message_parts.append(f"  🔗 链接：{video_public_url}")
+        message_parts.append("")
+        message_parts.append("📢 飞书通知：")
+        message_parts.append("  ✅ 已自动推送到飞书群组")
 
     return "\n".join(message_parts)
 

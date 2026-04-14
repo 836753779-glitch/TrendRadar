@@ -48,6 +48,10 @@ from tools.prompt_optimizer_tool import (
     create_narration_prompt,
     analyze_script_for_actions
 )
+from tools.video_upload_tool import (
+    upload_video_to_storage,
+    upload_and_notify_feishu
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -132,7 +136,11 @@ def build_agent(ctx=None):
             # 提示词优化工具（口型同步）
             optimize_prompt_for_speaking,
             create_narration_prompt,
-            analyze_script_for_actions
+            analyze_script_for_actions,
+
+            # 视频上传到对象存储
+            upload_video_to_storage,
+            upload_and_notify_feishu
         ],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,

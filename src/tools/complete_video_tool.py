@@ -236,18 +236,51 @@ def generate_complete_video(
   - 无需任何后续处理
 """
 
+    # 上传视频到对象存储
+    video_public_url = None
+    try:
+        from coze_coding_dev_sdk.s3 import S3SyncStorage
+
+        storage = S3SyncStorage(
+            endpoint_url=os.getenv("COZE_BUCKET_ENDPOINT_URL"),
+            access_key="",
+            secret_key="",
+            bucket_name=os.getenv("COZE_BUCKET_NAME"),
+            region="cn-beijing"
+        )
+
+        # 上传视频到对象存储
+        with open(final_video_path, 'rb') as f:
+            video_key = storage.stream_upload_file(
+                fileobj=f,
+                file_name=f"videos/{output_filename if output_filename else 'final_video'}.mp4",
+                content_type="video/mp4"
+            )
+
+        # 生成签名URL（有效期7天）
+        video_public_url = storage.generate_presigned_url(
+            key=video_key,
+            expire_time=604800  # 7天
+        )
+
+        final_report += f"\n\n☁️ 对象存储：\n  - 视频已上传到对象存储\n  - 公开URL有效期：7天\n  - 链接：{video_public_url}"
+
+    except Exception as e:
+        final_report += f"\n\n⚠️ 对象存储上传失败：{str(e)}\n  - 视频仅保存在本地"
+
     # 自动推送到飞书
     try:
         from tools.feishu_notification_tool import send_feishu_video_notification
 
-        # 提取视频信息
-        import re
         video_title = f"视频生成完成 - {output_filename if output_filename else '未命名'}"
+
+        # 使用对象存储URL（如果有），否则使用本地路径
+        final_video_url = video_public_url if video_public_url else final_video_path
 
         # 推送飞书通知
         feishu_result = send_feishu_video_notification(
             title=video_title,
-            video_url=f"file://{final_video_path}",
+            video_url=final_video_url,
             description=f"{prompt[:100]}{'...' if len(prompt) > 100 else ''}",
             video_duration=video_duration
         )
