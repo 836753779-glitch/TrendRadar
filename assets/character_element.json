@@ -1,10 +1,14 @@
 {
-  "element_id": "308111650912148",
-  "name": "女主讲人2",
-  "description": "香道文化传播者，专业讲师，温婉知性",
+  "element_id": "308110838358255",
+  "name": "香道文化传播者",
+  "description": "香道文化传播者，健康生活探索者（20年），互联网创业者（前上市公司VP），40-50岁，看上去只有30-40岁，穿着米白色中式改良立领上衣，带有淡粉和浅灰绿色的水墨风格印花，搭配浅米色阔腿长裤，头发向后梳理成低发髻，面带浅浅的微笑，气质温婉知性，端庄优雅",
   "reference_images": [
-    "./assets/character_reference/speaker2_image_1.jpg",
-    "./assets/character_reference/speaker2_image_2.jpg"
+    "./assets/character_reference/character_multi_angle_1.png",
+    "./assets/character_reference/character_multi_angle_2.png",
+    "./assets/character_reference/character_multi_angle_3.png"
   ],
-  "created_at": "2026-04-14"
+  "is_primary": true,
+  "note": "默认角色主体，除非用户明确要求，否则所有视频都使用此角色",
+  "created_at": "2026-04-14",
+  "confirmed_at": "2026-04-14"
 }
