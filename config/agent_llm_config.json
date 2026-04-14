@@ -34,6 +34,9 @@
     "send_feishu_text_message",
     "send_feishu_video_notification",
     "send_feishu_card_notification",
-    "send_feishu_batch_notification"
+    "send_feishu_batch_notification",
+    "optimize_prompt_for_speaking",
+    "create_narration_prompt",
+    "analyze_script_for_actions"
   ]
 }

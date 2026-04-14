@@ -43,6 +43,11 @@ from tools.feishu_notification_tool import (
     send_feishu_card_notification,
     send_feishu_batch_notification
 )
+from tools.prompt_optimizer_tool import (
+    optimize_prompt_for_speaking,
+    create_narration_prompt,
+    analyze_script_for_actions
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -122,7 +127,12 @@ def build_agent(ctx=None):
             send_feishu_text_message,
             send_feishu_video_notification,
             send_feishu_card_notification,
-            send_feishu_batch_notification
+            send_feishu_batch_notification,
+
+            # 提示词优化工具（口型同步）
+            optimize_prompt_for_speaking,
+            create_narration_prompt,
+            analyze_script_for_actions
         ],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,

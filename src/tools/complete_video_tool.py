@@ -66,8 +66,15 @@ def generate_complete_video(
         # 优先使用 Kling CLI（对角色参考图片支持最好）
         from tools.kling_cli_tool import kling_cli_text_to_video
 
-        # 优化提示词：简化并强调使用参考图片
-        optimized_prompt = f"{prompt}。严格按照提供的角色参考图片生成，确保人物外貌、发型、穿着完全一致，保持人物一致性。"
+        # 优化提示词：强调说话动作和自然手势
+        optimized_prompt = f"""{prompt}。
+
+重要动作要求：
+- 角色正在讲解/说话，嘴巴有自然的说话动作
+- 配合自然的手势动作，表达清晰
+- 面部表情生动，眼神专注
+- 整体姿态自然流畅
+- 严格按照提供的角色参考图片生成，确保人物外貌、发型、穿着完全一致，保持人物一致性。"""
 
         video_result = kling_cli_text_to_video(
             prompt=optimized_prompt,
