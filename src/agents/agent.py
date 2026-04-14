@@ -60,6 +60,11 @@ from tools.video_advanced_generation import (
     generate_video_with_both_frames,
     generate_video_fixed_camera
 )
+from tools.two_stage_production import (
+    generate_test_video,
+    confirm_and_generate_long_video,
+    two_stage_video_production
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -153,6 +158,11 @@ def build_agent(ctx=None):
             # 高级视频生成（使用首帧+尾帧、固定镜头等专业技术）
             generate_video_with_both_frames,
             generate_video_fixed_camera,
+
+            # 两阶段视频生产流程（先验证，再生产）
+            generate_test_video,
+            confirm_and_generate_long_video,
+            two_stage_video_production,
 
             # 视频上传到对象存储
             upload_video_to_storage,
