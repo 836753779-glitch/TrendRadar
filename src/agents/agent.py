@@ -22,7 +22,19 @@ from tools.kling_cli_tool import (
     kling_cli_account_info
 )
 from tools.video_edit_tool import concat_videos, trim_video
-from tools.subtitle_tool import add_subtitles
+
+# 导入语音合成和视频合成工具
+from tools.tts_tool import text_to_speech, batch_text_to_speech
+from tools.video_audio_tool import compile_video_audio, extract_video_audio
+from tools.subtitle_tool import (
+    generate_subtitle_from_audio,
+    add_subtitles_to_video,
+    auto_subtitle_pipeline
+)
+from tools.complete_video_tool import (
+    generate_complete_video,
+    batch_generate_videos
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -65,6 +77,24 @@ def build_agent(ctx=None):
         model=llm,
         system_prompt=cfg.get("sp"),
         tools=[
+            # 完整视频生成（推荐）
+            generate_complete_video,
+            batch_generate_videos,
+
+            # 语音合成
+            text_to_speech,
+            batch_text_to_speech,
+
+            # 视频音频合成
+            compile_video_audio,
+            extract_video_audio,
+
+            # 字幕生成
+            generate_subtitle_from_audio,
+            add_subtitles_to_video,
+            auto_subtitle_pipeline,
+
+            # 视频生成（原有）
             text_to_video,
             text_to_video_with_character,
             kling_text_to_video,
@@ -75,8 +105,7 @@ def build_agent(ctx=None):
             kling_cli_account_info,
             image_to_video,
             concat_videos,
-            trim_video,
-            add_subtitles
+            trim_video
         ],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,
