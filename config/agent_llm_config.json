@@ -48,6 +48,11 @@
     "two_stage_video_production",
     "create_simple_effective_prompt",
     "create_physics_safe_prompt",
-    "optimize_prompt_based_on_feedback"
+    "optimize_prompt_based_on_feedback",
+    "start_heartbeat",
+    "send_heartbeat",
+    "stop_heartbeat",
+    "check_heartbeat_status",
+    "monitor_video_generation"
   ]
 }

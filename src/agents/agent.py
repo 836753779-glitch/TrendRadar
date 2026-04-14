@@ -70,6 +70,13 @@ from tools.prompt_simplified import (
     create_physics_safe_prompt,
     optimize_prompt_based_on_feedback
 )
+from tools.heartbeat_tool import (
+    start_heartbeat,
+    send_heartbeat,
+    stop_heartbeat,
+    check_heartbeat_status,
+    monitor_video_generation
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -176,7 +183,14 @@ def build_agent(ctx=None):
             # 简化提示词工具（基于反馈优化，解决穿桌、人物质量问题）
             create_simple_effective_prompt,
             create_physics_safe_prompt,
-            optimize_prompt_based_on_feedback
+            optimize_prompt_based_on_feedback,
+
+            # 心跳机制工具（监控任务运行状态）
+            start_heartbeat,
+            send_heartbeat,
+            stop_heartbeat,
+            check_heartbeat_status,
+            monitor_video_generation
         ],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,
