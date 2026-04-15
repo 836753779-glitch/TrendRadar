@@ -29,9 +29,8 @@ def _send_heartbeat_to_feishu(message: str) -> str:
     发送心跳通知到飞书（内部函数，不使用 @tool 装饰）
     """
     try:
-        from tools.feishu_notification_tool import send_feishu_text_message
-        send_feishu_text_message(message)
-        return "success"
+        from tools.feishu_notification_tool import _send_feishu_text_raw
+        return _send_feishu_text_raw(message)
     except Exception as e:
         return f"error: {str(e)}"
 
@@ -105,8 +104,6 @@ def send_heartbeat(
             task_status="progress"
         )
     """
-    from tools.feishu_notification_tool import send_feishu_text_message
-
     global _heartbeat_status, _heartbeat_lock
 
     with _heartbeat_lock:
@@ -287,9 +284,34 @@ def _heartbeat_worker(
             if not _heartbeat_status["running"]:
                 break
 
-        # 发送心跳
+        # 发送心跳（直接调用普通函数，避免调用 @tool 函数）
         try:
-            send_heartbeat("")
+            # 构建心跳消息
+            status_emoji = {"running": "💓"}
+
+            if _heartbeat_status["start_time"]:
+                elapsed = datetime.now() - _heartbeat_status["start_time"]
+                elapsed_str = str(elapsed).split('.')[0]
+            else:
+                elapsed_str = "未知"
+
+            heartbeat_msg = f"""{status_emoji.get("running", "💓")} **心跳通知**
+
+**任务名称**：{task_name}
+**任务状态**：running
+**运行时间**：{elapsed_str}
+**心跳次数**：{_heartbeat_status['heartbeat_count']}
+**当前时间**：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+
+            # 发送心跳
+            _send_heartbeat_to_feishu(heartbeat_msg)
+
+            # 更新心跳计数
+            with _heartbeat_lock:
+                _heartbeat_status["last_heartbeat"] = datetime.now()
+                _heartbeat_status["heartbeat_count"] += 1
+
         except:
             pass  # 忽略发送失败
 

@@ -8,6 +8,35 @@ from coze_coding_utils.runtime_ctx.context import new_context
 FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/7d8ff2cf-295a-453c-8da2-e1d45c53caa5"
 
 
+# 提取公共逻辑为普通函数（可被其他函数调用）
+def _send_feishu_text_raw(text: str) -> str:
+    """
+    发送文本消息到飞书（内部函数，不使用 @tool 装饰）
+
+    Args:
+        text: 消息文本内容
+
+    Returns:
+        发送结果
+    """
+    try:
+        payload = {
+            "msg_type": "text",
+            "content": {"text": text}
+        }
+
+        response = requests.post(FEISHU_WEBHOOK_URL, json=payload)
+        result = response.json()
+
+        if result.get("StatusCode") == 0 or result.get("code") == 0:
+            return f"✅ 消息发送成功"
+        else:
+            return f"❌ 消息发送失败：{result}"
+
+    except Exception as e:
+        return f"❌ 发送异常：{str(e)}"
+
+
 @tool
 def send_feishu_text_message(text: str) -> str:
     """
@@ -24,22 +53,8 @@ def send_feishu_text_message(text: str) -> str:
     """
     ctx = request_context.get() or new_context(method="send_feishu_text_message")
 
-    try:
-        payload = {
-            "msg_type": "text",
-            "content": {"text": text}
-        }
-
-        response = requests.post(FEISHU_WEBHOOK_URL, json=payload)
-        result = response.json()
-
-        if result.get("StatusCode") == 0 or result.get("code") == 0:
-            return f"✅ 消息发送成功：{text}"
-        else:
-            return f"❌ 消息发送失败：{result}"
-
-    except Exception as e:
-        return f"❌ 发送异常：{str(e)}"
+    # 调用普通函数完成实际发送
+    return _send_feishu_text_raw(text)
 
 
 @tool
