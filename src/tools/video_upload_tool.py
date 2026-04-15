@@ -14,16 +14,14 @@ storage = S3SyncStorage(
 )
 
 
-@tool
-def upload_video_to_storage(
+# 提取公共逻辑为普通函数（可被其他函数调用）
+def _upload_video_to_storage_raw(
     local_video_path: str,
     file_name: str = None,
     expire_hours: int = 24
 ) -> str:
     """
-    将本地视频上传到对象存储，获取可访问的公开链接。
-
-    解决视频文件无法通过飞书查看的问题。
+    将本地视频上传到对象存储（内部函数，不使用 @tool 装饰）。
 
     Args:
         local_video_path: 本地视频文件路径
@@ -32,16 +30,7 @@ def upload_video_to_storage(
 
     Returns:
         视频的公开访问URL
-
-    Example:
-        upload_video_to_storage(
-            local_video_path="/workspace/projects/assets/final_output/video.mp4",
-            file_name="product_intro.mp4",
-            expire_hours=48
-        )
     """
-    ctx = request_context.get() or new_context(method="upload_video_to_storage")
-
     try:
         # 检查文件是否存在
         if not os.path.exists(local_video_path):
@@ -99,6 +88,42 @@ def upload_video_to_storage(
 
 
 @tool
+def upload_video_to_storage(
+    local_video_path: str,
+    file_name: str = None,
+    expire_hours: int = 24
+) -> str:
+    """
+    将本地视频上传到对象存储，获取可访问的公开链接。
+
+    解决视频文件无法通过飞书查看的问题。
+
+    Args:
+        local_video_path: 本地视频文件路径
+        file_name: 文件名（可选，不传则使用原文件名）
+        expire_hours: 链接有效期（小时，默认24小时）
+
+    Returns:
+        视频的公开访问URL
+
+    Example:
+        upload_video_to_storage(
+            local_video_path="/workspace/projects/assets/final_output/video.mp4",
+            file_name="product_intro.mp4",
+            expire_hours=48
+        )
+    """
+    ctx = request_context.get() or new_context(method="upload_video_to_storage")
+
+    # 调用普通函数完成实际上传
+    return _upload_video_to_storage_raw(
+        local_video_path=local_video_path,
+        file_name=file_name,
+        expire_hours=expire_hours
+    )
+
+
+@tool
 def upload_and_notify_feishu(
     local_video_path: str,
     title: str = "视频生成完成",
@@ -132,8 +157,8 @@ def upload_and_notify_feishu(
     ctx = request_context.get() or new_context(method="upload_and_notify_feishu")
 
     try:
-        # 步骤1：上传视频
-        upload_result = upload_video_to_storage(
+        # 步骤1：上传视频（调用普通函数，避免 @tool 调用问题）
+        upload_result = _upload_video_to_storage_raw(
             local_video_path=local_video_path,
             file_name=file_name,
             expire_hours=expire_hours
@@ -150,10 +175,10 @@ def upload_and_notify_feishu(
 
         public_url = url_match.group(0)
 
-        # 步骤2：推送到飞书
-        from tools.feishu_notification_tool import send_feishu_video_notification
+        # 步骤2：推送到飞书（调用普通函数，避免 @tool 调用问题）
+        from tools.feishu_notification_tool import _send_feishu_video_raw
 
-        feishu_result = send_feishu_video_notification(
+        feishu_result = _send_feishu_video_raw(
             title=title,
             video_url=public_url,
             description=description,

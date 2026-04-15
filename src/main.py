@@ -39,7 +39,7 @@ from coze_coding_utils.log.loop_trace import init_run_config, init_agent_config
 
 
 # 超时配置常量
-TIMEOUT_SECONDS = 900  # 15分钟
+TIMEOUT_SECONDS = 2700  # 45分钟（长视频生成需要更长时间：90秒视频≈6个镜头×15秒+TTS+字幕≈30-40分钟）
 
 class GraphService:
     def __init__(self):

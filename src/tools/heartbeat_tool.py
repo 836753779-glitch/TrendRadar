@@ -35,6 +35,46 @@ def _send_heartbeat_to_feishu(message: str) -> str:
         return f"error: {str(e)}"
 
 
+def _start_heartbeat_raw(
+    task_name: str,
+    interval: int = 60,
+    max_duration: Optional[int] = None
+) -> str:
+    """
+    启动心跳监控机制（内部函数，不使用 @tool 装饰）。
+
+    Args:
+        task_name: 任务名称（如"视频生成任务"）
+        interval: 心跳间隔时间（秒），默认60秒
+        max_duration: 最大监控时长（秒），超过则自动停止并报警，None表示不限制
+
+    Returns:
+        启动状态信息
+    """
+    global _heartbeat_status, _heartbeat_lock
+
+    with _heartbeat_lock:
+        if _heartbeat_status["running"]:
+            return f"⚠️ 心跳机制已在运行中，任务：{_heartbeat_status['task_name']}"
+
+        _heartbeat_status["running"] = True
+        _heartbeat_status["task_name"] = task_name
+        _heartbeat_status["start_time"] = datetime.now()
+        _heartbeat_status["last_heartbeat"] = datetime.now()
+        _heartbeat_status["heartbeat_count"] = 0
+        _heartbeat_status["interval"] = interval
+
+        # 启动心跳线程
+        _heartbeat_status["thread"] = threading.Thread(
+            target=_heartbeat_worker,
+            args=(task_name, interval, max_duration),
+            daemon=True
+        )
+        _heartbeat_status["thread"].start()
+
+        return f"✅ 心跳机制已启动\n任务名称：{task_name}\n心跳间隔：{interval}秒\n最大监控时长：{max_duration or '无限制'}秒"
+
+
 @tool
 def start_heartbeat(
     task_name: str,
@@ -59,28 +99,12 @@ def start_heartbeat(
             max_duration=300
         )
     """
-    global _heartbeat_status, _heartbeat_lock
-
-    with _heartbeat_lock:
-        if _heartbeat_status["running"]:
-            return f"⚠️ 心跳机制已在运行中，任务：{_heartbeat_status['task_name']}"
-
-        _heartbeat_status["running"] = True
-        _heartbeat_status["task_name"] = task_name
-        _heartbeat_status["start_time"] = datetime.now()
-        _heartbeat_status["last_heartbeat"] = datetime.now()
-        _heartbeat_status["heartbeat_count"] = 0
-        _heartbeat_status["interval"] = interval
-
-        # 启动心跳线程
-        _heartbeat_status["thread"] = threading.Thread(
-            target=_heartbeat_worker,
-            args=(task_name, interval, max_duration),
-            daemon=True
-        )
-        _heartbeat_status["thread"].start()
-
-        return f"✅ 心跳机制已启动\n任务名称：{task_name}\n心跳间隔：{interval}秒\n最大监控时长：{max_duration or '无限制'}秒"
+    # 调用普通函数完成实际启动
+    return _start_heartbeat_raw(
+        task_name=task_name,
+        interval=interval,
+        max_duration=max_duration
+    )
 
 
 @tool
@@ -366,7 +390,8 @@ def monitor_video_generation(
             max_duration=600
         )
     """
-    return start_heartbeat(
+    # 调用普通函数，避免 @tool 调用问题
+    return _start_heartbeat_raw(
         task_name=task_name,
         interval=interval,
         max_duration=max_duration

@@ -37,6 +37,75 @@ def _send_feishu_text_raw(text: str) -> str:
         return f"❌ 发送异常：{str(e)}"
 
 
+def _send_feishu_video_raw(
+    title: str,
+    video_url: str,
+    description: str = None,
+    video_duration: int = None,
+    thumbnail_url: str = None
+) -> str:
+    """
+    发送视频通知到飞书（内部函数，不使用 @tool 装饰）
+
+    Args:
+        title: 视频标题
+        video_url: 视频URL
+        description: 视频描述（可选）
+        video_duration: 视频时长（秒，可选）
+        thumbnail_url: 视频缩略图URL（可选）
+
+    Returns:
+        发送结果
+    """
+    try:
+        # 构建富文本内容
+        content_text = f"🎬 {title}\n\n"
+
+        if description:
+            content_text += f"📝 {description}\n\n"
+
+        if video_duration:
+            minutes = video_duration // 60
+            seconds = video_duration % 60
+            content_text += f"⏱️ 时长：{minutes}分{seconds}秒\n\n"
+
+        content_text += f"🔗 视频链接：{video_url}\n\n"
+        content_text += "点击链接下载或观看视频"
+
+        payload = {
+            "msg_type": "post",
+            "content": {
+                "post": {
+                    "zh_cn": {
+                        "title": f"📹 {title}",
+                        "content": [
+                            [
+                                {"tag": "text", "text": content_text},
+                                {"tag": "a", "text": "观看视频", "href": video_url}
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+
+        response = requests.post(FEISHU_WEBHOOK_URL, json=payload)
+        result = response.json()
+
+        if result.get("StatusCode") == 0 or result.get("code") == 0:
+            return f"""✅ 视频通知发送成功！
+
+📹 标题：{title}
+🔗 链接：{video_url}
+⏱️ 时长：{video_duration}秒
+"""
+        else:
+            return f"❌ 消息发送失败：{result}"
+
+    except Exception as e:
+        return f"❌ 发送异常：{str(e)}"
+
+
 @tool
 def send_feishu_text_message(text: str) -> str:
     """
@@ -88,53 +157,14 @@ def send_feishu_video_notification(
     """
     ctx = request_context.get() or new_context(method="send_feishu_video_notification")
 
-    try:
-        # 构建富文本内容
-        content_text = f"🎬 {title}\n\n"
-
-        if description:
-            content_text += f"📝 {description}\n\n"
-
-        if video_duration:
-            minutes = video_duration // 60
-            seconds = video_duration % 60
-            content_text += f"⏱️ 时长：{minutes}分{seconds}秒\n\n"
-
-        content_text += f"🔗 视频链接：{video_url}\n\n"
-        content_text += "点击链接下载或观看视频"
-
-        payload = {
-            "msg_type": "post",
-            "content": {
-                "post": {
-                    "zh_cn": {
-                        "title": f"📹 {title}",
-                        "content": [
-                            [
-                                {"tag": "text", "text": content_text},
-                                {"tag": "a", "text": "观看视频", "href": video_url}
-                            ]
-                        ]
-                    }
-                }
-            }
-        }
-
-        response = requests.post(FEISHU_WEBHOOK_URL, json=payload)
-        result = response.json()
-
-        if result.get("StatusCode") == 0 or result.get("code") == 0:
-            return f"""✅ 视频通知发送成功！
-
-📹 标题：{title}
-🔗 链接：{video_url}
-⏱️ 时长：{video_duration}秒
-"""
-        else:
-            return f"❌ 消息发送失败：{result}"
-
-    except Exception as e:
-        return f"❌ 发送异常：{str(e)}"
+    # 调用普通函数完成实际发送
+    return _send_feishu_video_raw(
+        title=title,
+        video_url=video_url,
+        description=description,
+        video_duration=video_duration,
+        thumbnail_url=thumbnail_url
+    )
 
 
 @tool
