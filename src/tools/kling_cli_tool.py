@@ -17,36 +17,46 @@ OUTPUT_DIR = os.path.join(WORKSPACE_PATH, "assets", "kling_output")
 def kling_cli_text_to_video(
     prompt: str,
     character_image_url: str = None,
+    element_id: str = "310095490083236",
     model: str = "kling-v3-omni",
-    mode: str = "pro",
+    mode: str = "std",
     aspect_ratio: str = "9:16",
     duration: int = 5,
-    sound: str = "on"
+    sound: str = "off"
 ) -> str:
     """
     使用快手 Kling AI Skill 生成视频，支持角色参考图片，实现人物一致性。
 
     这是官方的 Kling AI Skill，使用 Node.js CLI 调用，支持最新的 Kling O3 模型。
 
+    ⚠️ 强制标准（用户要求，所有参数必须严格遵守）：
+    - 清晰度：720P（mode="std"）
+    - 竖屏比例：9:16
+    - 音画同步：必须使用外部配音（sound="off"）
+    - 主体参考：Element ID 310095490083236（主讲人女）
+    - 如需更改标准，用户会明确提醒，在此之前必须严格执行
+
     Args:
         prompt: 视频场景的文本描述，需要详细描述画面内容、风格、氛围等
-        character_image_url: 角色参考图片的URL或本地路径，用于确保人物一致性（可选）
+        character_image_url: 角色参考图片的URL或本地路径，用于确保人物一致性（可选，但推荐使用）
+        element_id: 角色主体ID，用于跨视频保持人物一致性，默认 310095490083236（主讲人女）
         model: 使用的模型，支持 kling-v3, kling-v3-omni, kling-video-o1，默认 kling-v3-omni
-        mode: 视频质量模式，pro (1080P) 或 std (720P)，默认 pro
-        aspect_ratio: 视频比例，支持 16:9 / 9:16 / 1:1，默认 9:16
+        mode: 视频质量模式，std (720P) 或 pro (1080P)，⚠️ 默认 std (720P)
+        aspect_ratio: 视频比例，支持 16:9 / 9:16 / 1:1，⚠️ 默认 9:16（竖屏）
         duration: 视频时长（秒），范围 3-15 秒，默认 5 秒
-        sound: 是否生成音频，on 或 off，默认 on
+        sound: 是否生成音频，on 或 off，⚠️ 默认 off（音画同步使用外部配音）
 
     Returns:
         生成的视频信息，包含视频 URL 或本地路径
 
     Example:
-        # 文生视频（无角色参考）
+        # 标准生成（720P 竖屏，无音频，音画同步）
         kling_cli_text_to_video(
-            prompt="一位温婉的女性在茶室中手持线香，面带微笑"
+            prompt="手持线香，优雅地演示点香过程，传统中式茶室场景",
+            element_id="310095490083236"
         )
 
-        # 图生视频（有角色参考）
+        # 使用角色参考图片
         kling_cli_text_to_video(
             prompt="手持线香，优雅地演示点香过程",
             character_image_url="https://example.com/character.jpg"
@@ -56,6 +66,19 @@ def kling_cli_text_to_video(
 
     # 确保输出目录存在
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # ⚠️ 强制标准验证
+    if mode != "std":
+        print(f"⚠️ 警告: mode 参数已强制设置为 'std' (720P)，原值 '{mode}' 已被忽略")
+        mode = "std"
+    
+    if aspect_ratio != "9:16":
+        print(f"⚠️ 警告: aspect_ratio 参数已强制设置为 '9:16'，原值 '{aspect_ratio}' 已被忽略")
+        aspect_ratio = "9:16"
+    
+    if sound != "off":
+        print(f"⚠️ 警告: sound 参数已强制设置为 'off'（音画同步必须使用外部配音），原值 '{sound}' 已被忽略")
+        sound = "off"
 
     # 构建命令
     cmd = [
@@ -71,7 +94,11 @@ def kling_cli_text_to_video(
         "--output_dir", OUTPUT_DIR
     ]
 
-    # 如果有角色参考图片，添加到命令
+    # ⚠️ 强制使用 Element ID 作为主体参考（主讲人女）
+    if element_id:
+        cmd.extend(["--element_id", element_id])
+
+    # 如果有角色参考图片，也添加到命令（双重保障）
     if character_image_url:
         # 判断是 URL 还是本地路径
         if character_image_url.startswith("http://") or character_image_url.startswith("https://"):
