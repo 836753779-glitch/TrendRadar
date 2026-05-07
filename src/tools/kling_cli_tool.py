@@ -17,7 +17,7 @@ OUTPUT_DIR = os.path.join(WORKSPACE_PATH, "assets", "kling_output")
 def kling_cli_text_to_video(
     prompt: str,
     character_image_url: str = None,
-    element_id: str = "310095490083236",
+    element_id: str = "310095949506153",
     model: str = "kling-v3-omni",
     mode: str = "std",
     aspect_ratio: str = "9:16",
@@ -33,13 +33,13 @@ def kling_cli_text_to_video(
     - 清晰度：720P（mode="std"）
     - 竖屏比例：9:16
     - 音画同步：必须使用外部配音（sound="off"）
-    - 主体参考：Element ID 310095490083236（主讲人女）
+    - 主体参考：Element ID 310095949506153（主讲人女）
     - 如需更改标准，用户会明确提醒，在此之前必须严格执行
 
     Args:
         prompt: 视频场景的文本描述，需要详细描述画面内容、风格、氛围等
         character_image_url: 角色参考图片的URL或本地路径，用于确保人物一致性（可选，但推荐使用）
-        element_id: 角色主体ID，用于跨视频保持人物一致性，默认 310095490083236（主讲人女）
+        element_id: 角色主体ID，用于跨视频保持人物一致性，默认 310095949506153（主讲人女）
         model: 使用的模型，支持 kling-v3, kling-v3-omni, kling-video-o1，默认 kling-v3-omni
         mode: 视频质量模式，std (720P) 或 pro (1080P)，⚠️ 默认 std (720P)
         aspect_ratio: 视频比例，支持 16:9 / 9:16 / 1:1，⚠️ 默认 9:16（竖屏）
@@ -53,7 +53,7 @@ def kling_cli_text_to_video(
         # 标准生成（720P 竖屏，无音频，音画同步）
         kling_cli_text_to_video(
             prompt="手持线香，优雅地演示点香过程，传统中式茶室场景",
-            element_id="310095490083236"
+            element_id="310095949506153"
         )
 
         # 使用角色参考图片
