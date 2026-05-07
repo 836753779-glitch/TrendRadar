@@ -17,7 +17,7 @@ OUTPUT_DIR = os.path.join(WORKSPACE_PATH, "assets", "kling_output")
 def kling_cli_text_to_video(
     prompt: str,
     character_image_url: str = None,
-    element_id: str = "u_310029245256574",  # 用户确认的主讲人女
+    element_id: str = "310029245256574",  # 用户确认的主讲人女
     model: str = "kling-v3-omni",
     mode: str = "std",
     aspect_ratio: str = "9:16",
