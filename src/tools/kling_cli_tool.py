@@ -22,7 +22,7 @@ def kling_cli_text_to_video(
     mode: str = "std",
     aspect_ratio: str = "9:16",
     duration: int = 5,
-    sound: str = "off"
+    sound: str = "on"
 ) -> str:
     """
     使用快手 Kling AI Skill 生成视频，支持角色参考图片，实现人物一致性。
@@ -44,7 +44,7 @@ def kling_cli_text_to_video(
         mode: 视频质量模式，std (720P) 或 pro (1080P)，⚠️ 默认 std (720P)
         aspect_ratio: 视频比例，支持 16:9 / 9:16 / 1:1，⚠️ 默认 9:16（竖屏）
         duration: 视频时长（秒），范围 3-15 秒，默认 5 秒
-        sound: 是否生成音频，on 或 off，⚠️ 默认 off（音画同步使用外部配音）
+        sound: 是否生成音频，on 或 off，默认 on（生成带配音视频）
 
     Returns:
         生成的视频信息，包含视频 URL 或本地路径
@@ -76,9 +76,7 @@ def kling_cli_text_to_video(
         print(f"⚠️ 警告: aspect_ratio 参数已强制设置为 '9:16'，原值 '{aspect_ratio}' 已被忽略")
         aspect_ratio = "9:16"
     
-    if sound != "off":
-        print(f"⚠️ 警告: sound 参数已强制设置为 'off'（音画同步必须使用外部配音），原值 '{sound}' 已被忽略")
-        sound = "off"
+    # sound 参数由用户控制，支持带配音视频生成
 
     # 构建命令
     cmd = [
